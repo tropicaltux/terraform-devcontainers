@@ -3,9 +3,9 @@ resource "random_uuid" "auto" {
 }
 
 locals {
-  dev_id    = var.devcontainer_id != "" ? var.devcontainer_id : random_uuid.auto[0].result
-  tmp_dir   = "/home/ec2-user/tmp/project-x"
-  dns_name  = "ec2-${replace(aws_instance.this.public_ip, ".", "-")}.eu-central-1.compute.amazonaws.com"
+  dev_id     = var.devcontainer_id != "" ? var.devcontainer_id : random_uuid.auto[0].result
+  tmp_dir    = "/home/ec2-user/tmp/project-x"
+  dns_name   = "ec2-${replace(aws_instance.this.public_ip, ".", "-")}.eu-central-1.compute.amazonaws.com"
   vscode_url = "http://${local.dns_name}:8000"
 }
 
@@ -46,9 +46,9 @@ resource "aws_key_pair" "this" {
 
 /* ---------- EC2 Instance ---------- */
 resource "aws_instance" "this" {
-  ami           = "ami-0858a01583863845d"
-  instance_type = var.instance_type
-  key_name      = aws_key_pair.this.key_name
+  ami                    = "ami-0858a01583863845d"
+  instance_type          = var.instance_type
+  key_name               = aws_key_pair.this.key_name
   vpc_security_group_ids = [aws_security_group.this.id]
 
   # Connection block inherited by all provisioners
