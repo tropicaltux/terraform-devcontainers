@@ -1,0 +1,21 @@
+{
+    "name": "terraform-devcontainers",
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+    "workspaceFolder": "/terraform-devcontainers",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/terraform-devcontainers,type=bind,consistency=cached",
+    "mounts": [
+      "source=ssh-key,target=/home/vscode/.ssh,type=volume"
+    ],
+    "features": {
+      "ghcr.io/devcontainers/features/terraform:1": {},
+    },
+    "customizations": {
+      "vscode": {
+        "settings": {},
+        "extensions": [
+            "streetsidesoftware.code-spell-checker",
+            "hashicorp.hcl"
+        ]
+      }
+	}
+}
