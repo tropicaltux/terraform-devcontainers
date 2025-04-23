@@ -20,3 +20,8 @@ variable "instance_type" {
   type        = string
   default     = "t2.micro"
 }
+
+variable "public_key_path" {
+  description = "Path to the local public SSH key that will be used to create the AWS key pair."
+  type        = string
+}
