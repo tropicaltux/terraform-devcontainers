@@ -1,5 +1,8 @@
 .DS_Store
 
+# Ignore terraform lock file
+.terraform.lock.hcl
+
 # https://github.com/github/gitignore/blob/main/Terraform.gitignore
 # Local .terraform directories
 **/.terraform/*
