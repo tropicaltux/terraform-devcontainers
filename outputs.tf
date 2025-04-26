@@ -19,7 +19,7 @@ output "devcontainers" {
     for idx, container in local.prepared_devcontainers : {
       id     = container.id
       source = container.source
-      url    = "http://${local.dns_name}:${container.port}"
+      url    = "http://${aws_instance.this.public_ip}:${container.port}"
       port   = container.port
     }
   ]
