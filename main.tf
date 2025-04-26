@@ -1,14 +1,14 @@
 locals {
-  tmp_dir    = "/home/ec2-user/tmp/project-x"
-  dns_name   = "ec2-${replace(aws_instance.this.public_ip, ".", "-")}.compute.amazonaws.com"
-  
+  tmp_dir  = "/home/ec2-user/tmp/project-x"
+  dns_name = "ec2-${replace(aws_instance.this.public_ip, ".", "-")}.compute.amazonaws.com"
+
   # Set the base start port to 8000
   start_port = 8000
-  
+
   # Create a map of all devcontainers with UUIDs for IDs and assigned ports
   prepared_devcontainers = [
     for i, c in var.devcontainers : merge(c, {
-      id = c.id != null ? c.id : uuid(),
+      id   = c.id != null ? c.id : uuid(),
       port = c.port != null ? c.port : local.start_port + i
     })
   ]
@@ -84,7 +84,7 @@ resource "aws_instance" "this" {
     source      = "${path.module}/scripts"
     destination = local.tmp_dir
   }
-  
+
   # 3. Upload devcontainers configuration with ports
   provisioner "file" {
     content     = jsonencode(local.prepared_devcontainers)

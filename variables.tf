@@ -1,13 +1,13 @@
 variable "devcontainers" {
   description = "List of git repositories with devcontainer definitions to be run."
   type = list(object({
-    id              = optional(string)
-    source          = string
-    branch          = optional(string)
+    id                = optional(string)
+    source            = string
+    branch            = optional(string)
     devcontainer_path = optional(string)
-    port            = optional(number)
+    port              = optional(number)
   }))
-  
+
   validation {
     condition     = length([for c in var.devcontainers : c if c.source == ""]) == 0
     error_message = "The source attribute must be provided for all devcontainers."
@@ -17,7 +17,7 @@ variable "devcontainers" {
   validation {
     condition = length(
       distinct([for c in var.devcontainers : c.port if c.port != null])
-    ) == length(
+      ) == length(
       [for c in var.devcontainers : c.port if c.port != null]
     )
     error_message = "All specified ports must be unique across devcontainers."
@@ -26,8 +26,8 @@ variable "devcontainers" {
   # Validate that specified ports are in a reasonable range
   validation {
     condition = length(
-      [for c in var.devcontainers : c.port 
-       if c.port != null && (c.port < 1024 || c.port > 65535)]
+      [for c in var.devcontainers : c.port
+      if c.port != null && (c.port < 1024 || c.port > 65535)]
     ) == 0
     error_message = "Ports must be between 1024 and 65535."
   }
