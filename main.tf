@@ -1,17 +1,22 @@
-resource "random_uuid" "auto" {
-  count = var.devcontainer_id == "" ? 1 : 0
-}
-
 locals {
-  dev_id     = var.devcontainer_id != "" ? var.devcontainer_id : random_uuid.auto[0].result
   tmp_dir    = "/home/ec2-user/tmp/project-x"
-  dns_name   = "ec2-${replace(aws_instance.this.public_ip, ".", "-")}.eu-central-1.compute.amazonaws.com"
-  vscode_url = "http://${local.dns_name}:8000"
+  dns_name   = "ec2-${replace(aws_instance.this.public_ip, ".", "-")}.compute.amazonaws.com"
+  
+  # Set the base start port to 8000
+  start_port = 8000
+  
+  # Create a map of all devcontainers with UUIDs for IDs and assigned ports
+  prepared_devcontainers = [
+    for i, c in var.devcontainers : merge(c, {
+      id = c.id != null ? c.id : uuid(),
+      port = c.port != null ? c.port : local.start_port + i
+    })
+  ]
 }
 
 /* ---------- Security Group ---------- */
 resource "aws_security_group" "this" {
-  name        = "devcontainer-${local.dev_id}"
+  name        = "${var.name}-security-group"
   description = "Ingress for SSH and VS Code server"
 
   ingress {
@@ -22,12 +27,16 @@ resource "aws_security_group" "this" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    description = "VS Code / NGINX HTTP"
-    from_port   = 8000
-    to_port     = 8000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+  # Dynamic ingress rules for all assigned ports
+  dynamic "ingress" {
+    for_each = local.prepared_devcontainers
+    content {
+      description = "VS Code / NGINX HTTP for ${ingress.value.id != null ? ingress.value.id : "container-${ingress.key}"}"
+      from_port   = ingress.value.port
+      to_port     = ingress.value.port
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
   }
 
   egress {
@@ -40,7 +49,7 @@ resource "aws_security_group" "this" {
 
 /* ---------- Key Pair ---------- */
 resource "aws_key_pair" "this" {
-  key_name   = "devcontainer-${local.dev_id}"
+  key_name   = "${var.name}-keypair"
   public_key = file(var.public_key_path)
 }
 
@@ -50,6 +59,10 @@ resource "aws_instance" "this" {
   instance_type          = var.instance_type
   key_name               = aws_key_pair.this.key_name
   vpc_security_group_ids = [aws_security_group.this.id]
+
+  tags = {
+    Name = var.name
+  }
 
   # Connection block inherited by all provisioners
   connection {
@@ -71,15 +84,18 @@ resource "aws_instance" "this" {
     source      = "${path.module}/scripts"
     destination = local.tmp_dir
   }
+  
+  # 3. Upload devcontainers configuration with ports
+  provisioner "file" {
+    content     = jsonencode(local.prepared_devcontainers)
+    destination = "${local.tmp_dir}/devcontainers.json"
+  }
 
-  # 3. Run the deployment script
+  # 4. Run the Python script to process devcontainers
   provisioner "remote-exec" {
     inline = [
-      "export SCRIPTS=${local.tmp_dir}/scripts",
-      "export DEVCONTAINER_ID=${local.dev_id}",
-      "export REPO_URL=${var.repo_url}",
-      "chmod +x $SCRIPTS/devcontainer_up_with_web_ui.sh",
-      "$SCRIPTS/devcontainer_up_with_web_ui.sh"
+      "chmod +x ${local.tmp_dir}/scripts/devcontainer_up_with_web_ui.sh",
+      "python3 ${local.tmp_dir}/scripts/run_devcontainers.py --scripts-dir=${local.tmp_dir}/scripts --config=${local.tmp_dir}/devcontainers.json"
     ]
   }
-}
+} 

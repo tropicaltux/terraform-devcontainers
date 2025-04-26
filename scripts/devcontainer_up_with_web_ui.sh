@@ -2,15 +2,44 @@
 
 set -e
 
+# Validate required environment variables
+required_vars=("DEVCONTAINER_ID" "REPO_URL" "PORT" "SCRIPTS")
+missing_vars=()
+
+for var in "${required_vars[@]}"; do
+  if [ -z "${!var}" ]; then
+    missing_vars+=("$var")
+  fi
+done
+
+if [ ${#missing_vars[@]} -ne 0 ]; then
+  echo "ERROR: The following required environment variables are not set:"
+  for var in "${missing_vars[@]}"; do
+    echo "  - $var"
+  done
+  exit 1
+fi
+
 DEVCONTAINER_DIR=$HOME/project-x/$DEVCONTAINER_ID
 REPO_DIR=$DEVCONTAINER_DIR/repository
 WORKSPACE_DIR=$REPO_DIR
+
+# Use DEVCONTAINER_PATH if provided
+if [ ! -z "$DEVCONTAINER_PATH" ]; then
+  WORKSPACE_DIR=$REPO_DIR/$DEVCONTAINER_PATH
+fi
+
 OPENVSCODE_SERVER_DIR=$DEVCONTAINER_DIR/openvscode-server
 
 mkdir -p $REPO_DIR
 mkdir -p $OPENVSCODE_SERVER_DIR
 
-git clone $REPO_URL $REPO_DIR
+# Clone with branch if specified
+if [ ! -z "$BRANCH" ]; then
+  git clone -b $BRANCH $REPO_URL $REPO_DIR
+else
+  git clone $REPO_URL $REPO_DIR
+fi
 
 cp /home/ec2-user/tmp/project-x/scripts/init-openvscode-server.sh $OPENVSCODE_SERVER_DIR
 chmod +x $OPENVSCODE_SERVER_DIR/init-openvscode-server.sh
@@ -26,8 +55,8 @@ docker exec --user $CONTAINER_USER $CONTAINER_ID /tmp/openvscode-server/init-ope
 
 sudo cp $SCRIPTS/ws_params.conf /etc/nginx/conf.d/ws_params.conf
 
-sudo bash -c "OPENVSCODE_SERVER_IP=$OPENVSCODE_SERVER_IP OPENVSCODE_SERVER_PUBLIC_PORT=8000 envsubst < $SCRIPTS/openvscode-server.template.conf > /etc/nginx/conf.d/$DEVCONTAINER_ID.conf"
+sudo bash -c "OPENVSCODE_SERVER_IP=$OPENVSCODE_SERVER_IP OPENVSCODE_SERVER_PUBLIC_PORT=$PORT envsubst < $SCRIPTS/openvscode-server.template.conf > /etc/nginx/conf.d/$DEVCONTAINER_ID.conf"
 
-echo "OpenVSCode Server local URL: http://$OPENVSCODE_SERVER_IP:8000"
+echo "OpenVSCode Server for $DEVCONTAINER_ID URL: http://$HOSTNAME:$PORT"
 
 sudo systemctl reload nginx

@@ -1,9 +1,26 @@
+output "name" {
+  description = "Name prefix for the resources."
+  value       = var.name
+}
+
+output "instance_id" {
+  description = "ID of the EC2 instance."
+  value       = aws_instance.this.id
+}
+
 output "dns_name" {
   description = "Public DNS name of the EC2 instance."
   value       = local.dns_name
 }
 
-output "vscode_server_url" {
-  description = "URL to access the VS Code server running inside the devcontainer."
-  value       = local.vscode_url
+output "devcontainers" {
+  description = "List of configured devcontainers with their details."
+  value = [
+    for idx, container in local.prepared_devcontainers : {
+      id     = container.id
+      source = container.source
+      url    = "http://${local.dns_name}:${container.port}"
+      port   = container.port
+    }
+  ]
 }
