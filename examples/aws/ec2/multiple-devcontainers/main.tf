@@ -19,6 +19,6 @@ module "devcontainers" {
   instance_type   = "t2.micro"
 }
 
-output "devcontainer_module_output" {
+output "devcontainers_module_output" {
   value = module.devcontainers
 }

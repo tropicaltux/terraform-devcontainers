@@ -2,7 +2,7 @@ provider "aws" {
   region = "eu-central-1"
 }
 
-module "devcontainers" {
+module "devcontainer" {
   source = "github.com/tropicaltux/terraform-devcontainers"
   devcontainers = [
     {
@@ -14,5 +14,5 @@ module "devcontainers" {
 }
 
 output "devcontainer_module_output" {
-  value = module.devcontainers
+  value = module.devcontainer
 }
