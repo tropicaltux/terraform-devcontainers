@@ -71,8 +71,8 @@ resource "aws_instance" "this" {
   connection {
     type        = "ssh"
     user        = "ec2-user"
-    private_key = file(chomp(replace(var.public_key_path, ".pub", "")))
     host        = self.public_ip
+    agent       = true
   }
 
   # 1. Prepare a temporary directory
