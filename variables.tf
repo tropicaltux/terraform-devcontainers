@@ -25,11 +25,12 @@ variable "devcontainers" {
 
   # Validate that specified ports are in a reasonable range
   validation {
-    condition = length(
-      [for c in var.devcontainers : c.port
-      if c.port != null && (c.port < 1024 || c.port > 65535)]
-    ) == 0
-    error_message = "Ports must be between 1024 and 65535."
+    condition = alltrue([
+      for c in var.devcontainers : (
+        c.port == null ? true : (c.port >= 1024 && c.port <= 65535)
+      )
+    ])
+    error_message = "All specified ports must be between 1024 and 65535."
   }
 }
 
