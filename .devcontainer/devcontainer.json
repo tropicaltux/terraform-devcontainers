@@ -4,7 +4,8 @@
     "workspaceFolder": "/terraform-devcontainers",
     "workspaceMount": "source=${localWorkspaceFolder},target=/terraform-devcontainers,type=bind,consistency=cached",
     "mounts": [
-      "source=ssh-key,target=/home/vscode/.ssh,type=volume"
+      "source=ssh-key,target=/home/vscode/.ssh,type=volume",
+      "source=aws-credentials,target=/home/vscode/.aws,type=volume"
     ],
     "features": {
       "ghcr.io/devcontainers/features/terraform:1": {},
