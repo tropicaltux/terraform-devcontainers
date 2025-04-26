@@ -3,7 +3,7 @@
 set -e
 
 # Validate required environment variables
-required_vars=("DEVCONTAINER_ID" "REPO_URL" "PORT" "SCRIPTS")
+required_vars=("DEVCONTAINER_ID" "REPO_URL" "PORT" "SCRIPTS" "OPENVSCODE_TOKEN")
 missing_vars=()
 
 for var in "${required_vars[@]}"; do
@@ -51,7 +51,7 @@ CONTAINER_USER=$(cat $OPENVSCODE_SERVER_DIR/configuration.json | jq -r '.configu
 CONTAINER_ID=$(docker ps --filter "label=devcontainer.local_folder=$WORKSPACE_DIR" -q)
 OPENVSCODE_SERVER_IP=$(docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" $CONTAINER_ID)
 
-docker exec --user $CONTAINER_USER $CONTAINER_ID /tmp/openvscode-server/init-openvscode-server.sh
+docker exec --user $CONTAINER_USER -e OPENVSCODE_TOKEN="$OPENVSCODE_TOKEN" $CONTAINER_ID /tmp/openvscode-server/init-openvscode-server.sh
 
 sudo cp $SCRIPTS/ws_params.conf /etc/nginx/conf.d/ws_params.conf
 

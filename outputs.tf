@@ -15,11 +15,12 @@ output "dns_name" {
 
 output "devcontainers" {
   description = "List of configured devcontainers with their details."
+  sensitive = true
   value = [
-    for idx, container in local.prepared_devcontainers : {
+    for i, container in local.prepared_devcontainers : {
       id     = container.id
       source = container.source
-      url    = "http://${aws_instance.this.public_ip}:${container.port}"
+      url    = "http://${aws_instance.this.public_ip}:${container.port}/?tkn=${random_password.tokens[tostring(i)].result}"
       port   = container.port
     }
   ]

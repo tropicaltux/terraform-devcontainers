@@ -13,18 +13,51 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
+def get_token_from_aws_ssm(name_prefix, devcontainer_id):
+    """
+    Get the OpenVSCode server token for a specific devcontainer from AWS SSM Parameter Store.
+    
+    Args:
+        devcontainer_id: The ID of the devcontainer to get the token for
+        name_prefix: The name prefix for the parameter
+        
+    Returns:
+        The token as a string
+    """
+    try:
+        # Use the naming pattern /{name_prefix}/devcontainers/{devcontainer_id}/openvscode-token
+        parameter_name = f"/{name_prefix}/devcontainers/{devcontainer_id}/openvscode-token"
+        
+        result = subprocess.run(
+            ["aws", "ssm", "get-parameter", 
+             "--name", parameter_name, 
+             "--with-decryption", 
+             "--query", "Parameter.Value", 
+             "--output", "text"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to retrieve token for devcontainer {devcontainer_id} from AWS SSM Parameter Store: {e}")
+        logging.error(f"Error output: {e.stderr}")
+        sys.exit(1)
+
 def main():
     """
     Read the devcontainers.json configuration file and run the devcontainer_up_with_web_ui.sh script.
     """
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Run devcontainers based on configuration')
+    parser.add_argument('--name-prefix', required=True, help='Name prefix for the parameters')
     parser.add_argument('--scripts-dir', required=True, help='Path to the scripts directory')
     parser.add_argument('--config', required=True, help='Path to the devcontainers configuration file')
     args = parser.parse_args()
     
     scripts_dir = args.scripts_dir
     devcontainers_config = args.config
+    name_prefix = args.name_prefix
     
     # Set SCRIPTS environment variable for child processes
     os.environ['SCRIPTS'] = scripts_dir
@@ -52,20 +85,24 @@ def main():
         logging.info(f"Found {len(devcontainers)} devcontainer(s) in the configuration")
             
         # Process each devcontainer
-        for container in devcontainers:
-            container_id = container['id']
-            repo_url = container['source']
-            branch = container.get('branch', '')
-            devcontainer_path = container.get('devcontainer_path', '')
-            port = container.get('port', 8000)
+        for devcontainer in devcontainers:
+            devcontainer_id = devcontainer['id']
+            repo_url = devcontainer['source']
+            branch = devcontainer.get('branch', '')
+            devcontainer_path = devcontainer.get('devcontainer_path', '')
+            port = devcontainer.get('port', 8000)
             
-            logging.info(f"Processing devcontainer: {container_id} from {repo_url} on port {port}")
+            logging.info(f"Processing devcontainer: {devcontainer_id} from {repo_url} on port {port}")
+            
+            # Get the token for this specific devcontainer
+            token = get_token_from_aws_ssm(name_prefix, devcontainer_id)
             
             # Set environment variables for the script
             env = os.environ.copy()
-            env['DEVCONTAINER_ID'] = container_id
+            env['DEVCONTAINER_ID'] = devcontainer_id
             env['REPO_URL'] = repo_url
             env['PORT'] = str(port)
+            env['OPENVSCODE_TOKEN'] = token
             
             if branch:
                 env['BRANCH'] = branch
@@ -74,7 +111,7 @@ def main():
                 env['DEVCONTAINER_PATH'] = devcontainer_path
             
             # Run the script for this devcontainer
-            logging.info(f"Running devcontainer_up_with_web_ui.sh for {container_id}")
+            logging.info(f"Running devcontainer_up_with_web_ui.sh for {devcontainer_id}")
             result = subprocess.run(
                 [devcontainer_script],
                 env=env,
@@ -84,11 +121,11 @@ def main():
             )
             
             if result.returncode != 0:
-                logging.error(f"devcontainer_up_with_web_ui.sh failed for {container_id} with error code {result.returncode}")
+                logging.error(f"devcontainer_up_with_web_ui.sh failed for {devcontainer_id} with error code {result.returncode}")
                 logging.error(f"Error: {result.stderr}")
                 sys.exit(result.returncode)
             
-            logging.info(f"Output for {container_id}:\n{result.stdout}")
+            logging.info(f"Output for {devcontainer_id}:\n{result.stdout}")
         
         logging.info("All devcontainers have been successfully set up")
         

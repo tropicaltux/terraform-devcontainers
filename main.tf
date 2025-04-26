@@ -61,6 +61,23 @@ resource "aws_key_pair" "this" {
   public_key = local.should_create_key_pair ? file(var.public_ssh_key.local_key_path) : null
 }
 
+/* ---------- OpenVSCode Server Tokens ---------- */
+resource "random_password" "tokens" {
+  for_each = { for i, _ in var.devcontainers : tostring(i) => i }
+  
+  length           = 32
+  special          = false
+}
+
+resource "aws_ssm_parameter" "openvscode_tokens" {
+  for_each = { for i, _ in var.devcontainers : tostring(i) => i }
+  
+  name        = "/${var.name}/devcontainers/${local.prepared_devcontainers[each.value].id}/openvscode-token"
+  description = "OpenVSCode Server token for devcontainer ${local.prepared_devcontainers[each.value].id}"
+  type        = "SecureString"
+  value       = random_password.tokens[each.key].result
+}
+
 /* ---------- EC2 Instance ---------- */
 resource "aws_instance" "this" {
   ami                    = "ami-0858a01583863845d"
@@ -71,6 +88,9 @@ resource "aws_instance" "this" {
   tags = {
     Name = var.name
   }
+
+  # IAM instance profile for accessing Secrets Manager
+  iam_instance_profile = aws_iam_instance_profile.openvscode_secrets.name
 
   # Connection block inherited by all provisioners
   connection {
@@ -103,7 +123,7 @@ resource "aws_instance" "this" {
   provisioner "remote-exec" {
     inline = [
       "chmod +x ${local.tmp_dir}/scripts/devcontainer_up_with_web_ui.sh",
-      "python3 ${local.tmp_dir}/scripts/run_devcontainers.py --scripts-dir=${local.tmp_dir}/scripts --config=${local.tmp_dir}/devcontainers.json"
+      "python3 ${local.tmp_dir}/scripts/run_devcontainers.py --name-prefix=${var.name} --scripts-dir=${local.tmp_dir}/scripts --config=${local.tmp_dir}/devcontainers.json"
     ]
   }
-} 
+}

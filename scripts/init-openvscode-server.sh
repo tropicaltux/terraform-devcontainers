@@ -52,7 +52,7 @@ if [ "$(ps -ef | grep '\.openvscode-server' | wc -l)" = "1" ]; then
     # Start openvscode-server
     nohup "$HOME"/.openvscodeserver/bin/openvscode-server \
        serve-local \
-       --without-connection-token \
+       --connection-token "$OPENVSCODE_TOKEN" \
        --host 0.0.0.0 \
        --port 8000 \
        > "$HOME"/.openvscodeserver/server.log 2>&1 &
