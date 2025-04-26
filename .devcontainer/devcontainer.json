@@ -14,7 +14,8 @@
         "settings": {},
         "extensions": [
             "streetsidesoftware.code-spell-checker",
-            "hashicorp.hcl"
+            "hashicorp.hcl",
+            "ms-python.python"
         ]
       }
 	}
