@@ -12,6 +12,9 @@ locals {
       port = c.port != null ? c.port : local.start_port + i
     })
   ]
+
+  should_create_key_pair = var.public_ssh_key.local_key_path != null
+  key_pair_name          = local.should_create_key_pair ? "${var.name}-key-pair" : var.public_ssh_key.aws_key_pair_name
 }
 
 # Get current AWS region
@@ -52,15 +55,17 @@ resource "aws_security_group" "this" {
 
 /* ---------- Key Pair ---------- */
 resource "aws_key_pair" "this" {
-  key_name   = "${var.name}-keypair"
-  public_key = file(var.public_key_path)
+  count = local.should_create_key_pair ? 1 : 0
+
+  key_name   = local.key_pair_name
+  public_key = local.should_create_key_pair ? file(var.public_ssh_key.local_key_path) : null
 }
 
 /* ---------- EC2 Instance ---------- */
 resource "aws_instance" "this" {
   ami                    = "ami-0858a01583863845d"
   instance_type          = var.instance_type
-  key_name               = aws_key_pair.this.key_name
+  key_name               = local.key_pair_name
   vpc_security_group_ids = [aws_security_group.this.id]
 
   tags = {
@@ -69,10 +74,10 @@ resource "aws_instance" "this" {
 
   # Connection block inherited by all provisioners
   connection {
-    type        = "ssh"
-    user        = "ec2-user"
-    host        = self.public_ip
-    agent       = true
+    type  = "ssh"
+    user  = "ec2-user"
+    host  = self.public_ip
+    agent = true
   }
 
   # 1. Prepare a temporary directory
