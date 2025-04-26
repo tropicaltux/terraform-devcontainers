@@ -1,6 +1,6 @@
 locals {
   tmp_dir  = "/home/ec2-user/tmp/project-x"
-  dns_name = "ec2-${replace(aws_instance.this.public_ip, ".", "-")}.compute.amazonaws.com"
+  dns_name = "ec2-${replace(aws_instance.this.public_ip, ".", "-")}.${data.aws_region.current.name}.compute.amazonaws.com"
 
   # Set the base start port to 8000
   start_port = 8000
@@ -13,6 +13,9 @@ locals {
     })
   ]
 }
+
+# Get current AWS region
+data "aws_region" "current" {}
 
 /* ---------- Security Group ---------- */
 resource "aws_security_group" "this" {
