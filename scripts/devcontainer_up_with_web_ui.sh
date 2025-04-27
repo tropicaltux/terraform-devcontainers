@@ -20,7 +20,7 @@ if [ ${#missing_vars[@]} -ne 0 ]; then
   exit 1
 fi
 
-DEVCONTAINER_DIR=$HOME/project-x/$DEVCONTAINER_ID
+DEVCONTAINER_DIR=$HOME/terraform-devcontainers/$DEVCONTAINER_ID
 REPO_DIR=$DEVCONTAINER_DIR/repository
 WORKSPACE_DIR=$REPO_DIR
 
@@ -41,7 +41,7 @@ else
   git clone $REPO_URL $REPO_DIR
 fi
 
-cp /home/ec2-user/tmp/project-x/scripts/init-openvscode-server.sh $OPENVSCODE_SERVER_DIR
+cp /home/ec2-user/tmp/terraform-devcontainers/scripts/init-openvscode-server.sh $OPENVSCODE_SERVER_DIR
 chmod +x $OPENVSCODE_SERVER_DIR/init-openvscode-server.sh
 devcontainer read-configuration --include-merged-configuration --log-format json --workspace-folder $WORKSPACE_DIR 2>/dev/null > $OPENVSCODE_SERVER_DIR/configuration.json
 

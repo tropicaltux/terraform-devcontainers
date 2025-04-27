@@ -1,5 +1,5 @@
 locals {
-  tmp_dir  = "/home/ec2-user/tmp/project-x"
+  tmp_dir  = "/home/ec2-user/tmp/terraform-devcontainers"
   dns_name = "ec2-${replace(aws_instance.this.public_ip, ".", "-")}.${data.aws_region.current.name}.compute.amazonaws.com"
 
   # Set the base start port to 8000
