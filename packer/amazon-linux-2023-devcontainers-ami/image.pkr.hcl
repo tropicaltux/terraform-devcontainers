@@ -59,11 +59,11 @@ build {
       "sudo usermod -aG docker ec2-user",
 
       # Install Docker Compose Plugin
-      "export CLI_PLUGINS_DIR=/usr/local/lib/docker/cli-plugins",
+      "export CLI_PLUGINS_PATH=/usr/local/lib/docker/cli-plugins",
       "export DOCKER_COMPOSE_URL=https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$(uname -m)",
-      "sudo mkdir -p $CLI_PLUGINS_DIR",
-      "sudo curl -SL $DOCKER_COMPOSE_URL -o $CLI_PLUGINS_DIR/docker-compose",
-      "sudo chmod +x $CLI_PLUGINS_DIR/docker-compose",
+      "sudo mkdir -p $CLI_PLUGINS_PATH",
+      "sudo curl -SL $DOCKER_COMPOSE_URL -o $CLI_PLUGINS_PATH/docker-compose",
+      "sudo chmod +x $CLI_PLUGINS_PATH/docker-compose",
 
       # Install Dev Containers CLI
       "sudo dnf install -y git nodejs",

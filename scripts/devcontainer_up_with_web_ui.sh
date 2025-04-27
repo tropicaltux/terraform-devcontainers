@@ -20,36 +20,36 @@ if [ ${#missing_vars[@]} -ne 0 ]; then
   exit 1
 fi
 
-DEVCONTAINER_DIR=$HOME/terraform-devcontainers/$DEVCONTAINER_ID
-REPO_DIR=$DEVCONTAINER_DIR/repository
-WORKSPACE_DIR=$REPO_DIR
+DEVCONTAINER_PATH=$HOME/terraform-devcontainers/$DEVCONTAINER_ID
+REPO_PATH=$DEVCONTAINER_PATH/repository
+WORKSPACE_PATH=$REPO_PATH
 
 # Use DEVCONTAINER_PATH if provided
 if [ ! -z "$DEVCONTAINER_PATH" ]; then
-  WORKSPACE_DIR=$REPO_DIR/$DEVCONTAINER_PATH
+  WORKSPACE_PATH=$REPO_PATH/$DEVCONTAINER_PATH
 fi
 
-OPENVSCODE_SERVER_DIR=$DEVCONTAINER_DIR/openvscode-server
+OPENVSCODE_SERVER_PATH=$DEVCONTAINER_PATH/openvscode-server
 
-mkdir -p $REPO_DIR
-mkdir -p $OPENVSCODE_SERVER_DIR
+mkdir -p $REPO_PATH
+mkdir -p $OPENVSCODE_SERVER_PATH
 
 # Clone with branch if specified
 if [ ! -z "$BRANCH" ]; then
-  git clone -b $BRANCH $REPO_URL $REPO_DIR
+  git clone -b $BRANCH $REPO_URL $REPO_PATH
 else
-  git clone $REPO_URL $REPO_DIR
+  git clone $REPO_URL $REPO_PATH
 fi
 
-cp /home/ec2-user/tmp/terraform-devcontainers/scripts/init-openvscode-server.sh $OPENVSCODE_SERVER_DIR
-chmod +x $OPENVSCODE_SERVER_DIR/init-openvscode-server.sh
-devcontainer read-configuration --include-merged-configuration --log-format json --workspace-folder $WORKSPACE_DIR 2>/dev/null > $OPENVSCODE_SERVER_DIR/configuration.json
+cp /home/ec2-user/tmp/terraform-devcontainers/scripts/init-openvscode-server.sh $OPENVSCODE_SERVER_PATH
+chmod +x $OPENVSCODE_SERVER_PATH/init-openvscode-server.sh
+devcontainer read-configuration --include-merged-configuration --log-format json --workspace-folder $WORKSPACE_PATH 2>/dev/null > $OPENVSCODE_SERVER_PATH/configuration.json
 
-devcontainer up --remove-existing-container --mount "type=bind,source=$OPENVSCODE_SERVER_DIR,target=/tmp/openvscode-server" --workspace-folder $WORKSPACE_DIR
+devcontainer up --remove-existing-container --mount "type=bind,source=$OPENVSCODE_SERVER_PATH,target=/tmp/openvscode-server" --workspace-folder $WORKSPACE_PATH
 
-CONTAINER_USER=$(cat $OPENVSCODE_SERVER_DIR/configuration.json | jq -r '.configuration.remoteUser // .mergedConfiguration.remoteUser')
-CONTAINER_WORKSPACE_PATH=$(cat $OPENVSCODE_SERVER_DIR/configuration.json | jq -r '.workspace.workspaceFolder')
-CONTAINER_ID=$(docker ps --filter "label=devcontainer.local_folder=$WORKSPACE_DIR" -q)
+CONTAINER_USER=$(cat $OPENVSCODE_SERVER_PATH/configuration.json | jq -r '.configuration.remoteUser // .mergedConfiguration.remoteUser')
+CONTAINER_WORKSPACE_PATH=$(cat $OPENVSCODE_SERVER_PATH/configuration.json | jq -r '.workspace.workspaceFolder')
+CONTAINER_ID=$(docker ps --filter "label=devcontainer.local_folder=$WORKSPACE_PATH" -q)
 OPENVSCODE_SERVER_IP=$(docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" $CONTAINER_ID)
 
 docker exec --user $CONTAINER_USER -e OPENVSCODE_TOKEN="$OPENVSCODE_TOKEN" $CONTAINER_ID /tmp/openvscode-server/init-openvscode-server.sh
