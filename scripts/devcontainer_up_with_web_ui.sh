@@ -48,6 +48,7 @@ devcontainer read-configuration --include-merged-configuration --log-format json
 devcontainer up --remove-existing-container --mount "type=bind,source=$OPENVSCODE_SERVER_DIR,target=/tmp/openvscode-server" --workspace-folder $WORKSPACE_DIR
 
 CONTAINER_USER=$(cat $OPENVSCODE_SERVER_DIR/configuration.json | jq -r '.configuration.remoteUser // .mergedConfiguration.remoteUser')
+CONTAINER_WORKSPACE_PATH=$(cat $OPENVSCODE_SERVER_DIR/configuration.json | jq -r '.workspace.workspaceFolder')
 CONTAINER_ID=$(docker ps --filter "label=devcontainer.local_folder=$WORKSPACE_DIR" -q)
 OPENVSCODE_SERVER_IP=$(docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" $CONTAINER_ID)
 
@@ -55,7 +56,18 @@ docker exec --user $CONTAINER_USER -e OPENVSCODE_TOKEN="$OPENVSCODE_TOKEN" $CONT
 
 sudo cp $SCRIPTS/ws_params.conf /etc/nginx/conf.d/ws_params.conf
 
-sudo bash -c "OPENVSCODE_SERVER_IP=$OPENVSCODE_SERVER_IP OPENVSCODE_SERVER_PUBLIC_PORT=$PORT envsubst < $SCRIPTS/openvscode-server.template.conf > /etc/nginx/conf.d/$DEVCONTAINER_ID.conf"
+sudo bash -c "OPENVSCODE_SERVER_IP=$OPENVSCODE_SERVER_IP OPENVSCODE_SERVER_PUBLIC_PORT=$PORT WORKSPACE_PATH=$CONTAINER_WORKSPACE_PATH envsubst < $SCRIPTS/openvscode-server.template.conf > /etc/nginx/conf.d/$DEVCONTAINER_ID.conf"
+
+sudo bash -c "
+  env \
+    OPENVSCODE_SERVER_IP=$OPENVSCODE_SERVER_IP \
+    OPENVSCODE_SERVER_PUBLIC_PORT=$PORT \
+    WORKSPACE_PATH=$CONTAINER_WORKSPACE_PATH \
+  envsubst '\$OPENVSCODE_SERVER_IP \$OPENVSCODE_SERVER_PUBLIC_PORT \$WORKSPACE_PATH' \
+    < $SCRIPTS/openvscode-server.template.conf \
+    > /etc/nginx/conf.d/$DEVCONTAINER_ID.conf
+"
+
 
 echo "OpenVSCode Server for $DEVCONTAINER_ID URL: http://$HOSTNAME:$PORT"
 
