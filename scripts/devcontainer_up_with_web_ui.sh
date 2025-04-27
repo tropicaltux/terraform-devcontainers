@@ -20,25 +20,26 @@ if [ ${#missing_vars[@]} -ne 0 ]; then
   exit 1
 fi
 
-DEVCONTAINER_PATH=$HOME/terraform-devcontainers/$DEVCONTAINER_ID
-REPO_PATH=$DEVCONTAINER_PATH/repository
-WORKSPACE_PATH=$REPO_PATH
+DEVCONTAINER_DEST_PATH=$HOME/terraform-devcontainers/$DEVCONTAINER_ID
+REPO_DEST_PATH=$DEVCONTAINER_DEST_PATH/repository
 
-# Use DEVCONTAINER_PATH if provided
-if [ ! -z "$DEVCONTAINER_PATH" ]; then
-  WORKSPACE_PATH=$REPO_PATH/$DEVCONTAINER_PATH
-fi
+OPENVSCODE_SERVER_PATH=$DEVCONTAINER_DEST_PATH/openvscode-server
 
-OPENVSCODE_SERVER_PATH=$DEVCONTAINER_PATH/openvscode-server
-
-mkdir -p $REPO_PATH
+mkdir -p $REPO_DEST_PATH
 mkdir -p $OPENVSCODE_SERVER_PATH
 
 # Clone with branch if specified
 if [ ! -z "$BRANCH" ]; then
-  git clone -b $BRANCH $REPO_URL $REPO_PATH
+  git -C $REPO_DEST_PATH clone -b $BRANCH $REPO_URL
 else
-  git clone $REPO_URL $REPO_PATH
+  git -C $REPO_DEST_PATH clone $REPO_URL
+fi
+
+REPO_DIR=$(basename "$(find $REPO_DEST_PATH -mindepth 1 -maxdepth 1 -type d)")
+WORKSPACE_PATH=$REPO_DEST_PATH/$REPO_DIR
+# Use DEVCONTAINER_PATH if provided
+if [ ! -z "$DEVCONTAINER_PATH" ]; then
+  WORKSPACE_PATH=$WORKSPACE_PATH/$DEVCONTAINER_PATH
 fi
 
 cp /home/ec2-user/tmp/terraform-devcontainers/scripts/init-openvscode-server.sh $OPENVSCODE_SERVER_PATH
@@ -68,7 +69,6 @@ sudo bash -c "
     > /etc/nginx/conf.d/$DEVCONTAINER_ID.conf
 "
 
-
-echo "OpenVSCode Server for $DEVCONTAINER_ID URL: http://$HOSTNAME:$PORT"
+echo "OpenVSCode Server for $DEVCONTAINER_ID URL: http://$OPENVSCODE_SERVER_IP:$PORT"
 
 sudo systemctl reload nginx
