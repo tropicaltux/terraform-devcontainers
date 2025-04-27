@@ -20,7 +20,7 @@ output "devcontainers" {
     for i, container in local.prepared_devcontainers : {
       id     = container.id
       source = container.source
-      url    = "http://${aws_instance.this.public_ip}:${container.port}/?tkn=${random_password.tokens[tostring(i)].result}"
+      url    = "https://${aws_instance.this.public_ip}:${container.port}/?tkn=${random_password.tokens[tostring(i)].result}"
       port   = container.port
     }
   ]

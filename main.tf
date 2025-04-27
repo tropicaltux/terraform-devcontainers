@@ -122,8 +122,12 @@ resource "aws_instance" "this" {
   # 4. Run the Python script to process devcontainers
   provisioner "remote-exec" {
     inline = [
+      "sudo chmod +x ${local.tmp_dir}/scripts/generate-self-sing-cert.sh",
+      "sudo PUBLIC_IP=${self.public_ip} ${local.tmp_dir}/scripts/generate-self-sing-cert.sh",
+
       "chmod +x ${local.tmp_dir}/scripts/devcontainer_up_with_web_ui.sh",
-      "python3 ${local.tmp_dir}/scripts/run_devcontainers.py --name-prefix=${var.name} --scripts-dir=${local.tmp_dir}/scripts --config=${local.tmp_dir}/devcontainers.json"
+      "python3 ${local.tmp_dir}/scripts/run_devcontainers.py --name-prefix=${var.name} --public-ip=${self.public_ip} --scripts-dir=${local.tmp_dir}/scripts --config=${local.tmp_dir}/devcontainers.json",
+      "rm -rf ${local.tmp_dir}"
     ]
   }
 }

@@ -3,7 +3,7 @@
 set -e
 
 # Validate required environment variables
-required_vars=("DEVCONTAINER_ID" "REPO_URL" "PORT" "SCRIPTS" "OPENVSCODE_TOKEN")
+required_vars=("DEVCONTAINER_ID" "REPO_URL" "PORT" "SCRIPTS" "OPENVSCODE_TOKEN" "PUBLIC_IP")
 missing_vars=()
 
 for var in "${required_vars[@]}"; do
@@ -64,6 +64,7 @@ sudo bash -c "
     OPENVSCODE_SERVER_IP=$OPENVSCODE_SERVER_IP \
     OPENVSCODE_SERVER_PUBLIC_PORT=$PORT \
     WORKSPACE_PATH=$CONTAINER_WORKSPACE_PATH \
+    PUBLIC_IP=$PUBLIC_IP \
   envsubst '\$OPENVSCODE_SERVER_IP \$OPENVSCODE_SERVER_PUBLIC_PORT \$WORKSPACE_PATH' \
     < $SCRIPTS/openvscode-server.template.conf \
     > /etc/nginx/conf.d/$DEVCONTAINER_ID.conf

@@ -51,13 +51,16 @@ def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Run devcontainers based on configuration')
     parser.add_argument('--name-prefix', required=True, help='Name prefix for the parameters')
+    parser.add_argument('--public-ip', required=True, help='EC2 instance public IPv4 address.')
     parser.add_argument('--scripts-dir', required=True, help='Path to the scripts directory')
     parser.add_argument('--config', required=True, help='Path to the devcontainers configuration file')
+
     args = parser.parse_args()
     
+    name_prefix = args.name_prefix
+    public_ip = args.public_ip
     scripts_dir = args.scripts_dir
     devcontainers_config = args.config
-    name_prefix = args.name_prefix
     
     # Set SCRIPTS environment variable for child processes
     os.environ['SCRIPTS'] = scripts_dir
@@ -103,6 +106,7 @@ def main():
             env['REPO_URL'] = repo_url
             env['PORT'] = str(port)
             env['OPENVSCODE_TOKEN'] = token
+            env['PUBLIC_IP'] = public_ip
             
             if branch:
                 env['BRANCH'] = branch
