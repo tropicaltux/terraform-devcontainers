@@ -2,10 +2,10 @@ locals {
   tmp_dir  = "/home/ec2-user/tmp/terraform-devcontainers"
   dns_name = "ec2-${replace(aws_instance.this.public_ip, ".", "-")}.${data.aws_region.current.name}.compute.amazonaws.com"
 
-  # Set the base start port to 8000
-  start_port = 8000
+  start_openvscode_server_port = 8000
+  start_ssh_port = 2222
 
-  # Create a map of all devcontainers with UUIDs for IDs and assigned ports
+  # Post-process devcontainers to assign unique IDs and ports
   prepared_devcontainers = [
     for i, c in var.devcontainers : merge(c, {
       # Generate a unique ID for each devcontainer if not provided
@@ -21,7 +21,7 @@ locals {
             # If OpenVSCode server is explicitly configured
             try(c.remote_access.openvscode_server, null) != null ? merge(
               c.remote_access.openvscode_server,
-              { port = coalesce(c.remote_access.openvscode_server.port, local.start_port + i * 2) }
+              { port = coalesce(c.remote_access.openvscode_server.port, local.start_openvscode_server_port + i) }
             ) :
             # Otherwise, don't configure OpenVSCode server
             null
@@ -33,7 +33,7 @@ locals {
             try(c.remote_access.ssh, null) != null ? merge(
               c.remote_access.ssh,
               {
-                port           = coalesce(c.remote_access.ssh.port, local.start_port + i * 2 + 1),
+                port           = coalesce(c.remote_access.ssh.port, local.start_ssh_port + i),
                 public_ssh_key = coalesce(c.remote_access.ssh.public_ssh_key, var.public_ssh_key)
               }
             ) :
