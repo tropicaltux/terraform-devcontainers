@@ -69,8 +69,13 @@ build {
       "sudo dnf install -y git nodejs",
       "sudo npm install -g @devcontainers/cli",
 
+      # Install Python modules
+      "sudo dnf install -y python3-pip",
+      "pip3 install commentjson",
+
       # Install NGINX
       "sudo dnf install -y nginx",
+      "sudo dnf install -y nginx-mod-stream",
       "sudo systemctl enable nginx",
       "sudo systemctl start nginx",
 

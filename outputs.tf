@@ -15,13 +15,24 @@ output "dns_name" {
 
 output "devcontainers" {
   description = "List of configured devcontainers with their details."
-  sensitive = true
+  sensitive   = true
   value = [
     for i, container in local.prepared_devcontainers : {
       id     = container.id
       source = container.source
-      url    = "https://${aws_instance.this.public_ip}:${container.port}/?tkn=${random_password.tokens[tostring(i)].result}"
-      port   = container.port
+      remote_access = merge(
+        {},
+        container.remote_access.openvscode_server != null ? {
+          openvscode_server = {
+            url = "https://${aws_instance.this.public_ip}:${container.remote_access.openvscode_server.port}/?tkn=${random_password.tokens[tostring(i)].result}"
+          }
+        } : {},
+        container.remote_access.ssh != null ? {
+          ssh = {
+            command = "ssh -p ${container.remote_access.ssh.port} {devcontainer-user}@${aws_instance.this.public_ip}"
+          }
+        } : {}
+      )
     }
   ]
 }

@@ -26,7 +26,7 @@ if [ "$(ps -ef | grep '\.openvscode-server' | wc -l)" = "1" ]; then
         .mergedConfiguration.customizations?.openvscodeserver[]?.extensions[]?,
         .mergedConfiguration.customizations?.vscode[]?.extensions[]?
         ] | .[]
-    ' /tmp/openvscode-server/configuration.json ) )
+    ' /tmp/init-scripts/configuration.json ) )
     # Install extensions
     if [ "${extensions[0]}" != "" ] && [ "${extensions[0]}" != "null" ] ; then 
         set +e
@@ -41,7 +41,7 @@ if [ "$(ps -ef | grep '\.openvscode-server' | wc -l)" = "1" ]; then
         .mergedConfiguration.customizations?.openvscodeserver[]?.settings?,
         .mergedConfiguration.customizations?.vscode[]?.settings?
         ] | add
-    ' /tmp/openvscode-server/configuration.json)"
+    ' /tmp/init-scripts/configuration.json)"
     # Place settings in right spot
     if [ "${settings}" != "" ] && [ "${settings}" != "null" ]; then
         echo "${settings}" >  "$HOME"/.openvscode-server/data/Machine/settings.json
