@@ -29,7 +29,7 @@ output "devcontainers" {
         } : {},
         container.remote_access.ssh != null ? {
           ssh = {
-            command = "ssh -p ${container.remote_access.ssh.port} {devcontainer-user}@${aws_instance.this.public_ip}"
+            command = "ssh -p ${container.remote_access.ssh.port} root@${aws_instance.this.public_ip}"
           }
         } : {}
       )
