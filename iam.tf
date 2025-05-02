@@ -44,8 +44,8 @@ resource "aws_iam_role_policy" "ssh_keys_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Action = ["ssm:GetParameter"]
-        Effect = "Allow"
+        Action   = ["ssm:GetParameter"]
+        Effect   = "Allow"
         Resource = [for k, v in aws_ssm_parameter.container_ssh_public_keys : v.arn]
       }
     ]

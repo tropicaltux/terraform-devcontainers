@@ -29,6 +29,12 @@ variable "devcontainers" {
     error_message = "The *source* attribute is mandatory for every devcontainer."
   }
 
+  # Number of devcontainers must be between 1 and 1000
+  validation {
+    condition     = length(var.devcontainers) >= 1 && length(var.devcontainers) <= 512
+    error_message = "The number of devcontainers must be between 1 and 512."
+  }
+
   # All declared ports (VS Code & SSH) must be in range 1024-65535
   validation {
     condition = alltrue(flatten([
