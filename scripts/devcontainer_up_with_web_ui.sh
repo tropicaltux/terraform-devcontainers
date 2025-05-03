@@ -52,12 +52,9 @@ INIT_SCRIPTS_PATH=$DEVCONTAINER_DEST_PATH/init-scripts
 mkdir -p $REPO_DEST_PATH
 mkdir -p $INIT_SCRIPTS_PATH
 
-# Clone with branch if specified
-if [ ! -z "$BRANCH" ]; then
-  git -C $REPO_DEST_PATH clone -b $BRANCH $REPO_URL
-else
-  git -C $REPO_DEST_PATH clone $REPO_URL
-fi
+# Clone the repository using clone_repository.sh script
+export REPO_DEST_PATH=$REPO_DEST_PATH
+${SCRIPTS}/clone_repository.sh
 
 REPO_DIR=$(basename "$(find $REPO_DEST_PATH -mindepth 1 -maxdepth 1 -type d)")
 WORKSPACE_PATH=$REPO_DEST_PATH/$REPO_DIR

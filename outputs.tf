@@ -19,7 +19,7 @@ output "devcontainers" {
   value = [
     for i, container in local.prepared_devcontainers : {
       id     = container.id
-      source = container.source
+      source = container.source.url
       remote_access = merge(
         {},
         container.remote_access.openvscode_server != null ? {

@@ -2,7 +2,7 @@ locals {
   tmp_dir  = "/home/ec2-user/tmp/terraform-devcontainers"
   dns_name = "ec2-${replace(aws_instance.this.public_ip, ".", "-")}.${data.aws_region.current.name}.compute.amazonaws.com"
 
-    # Starting bases for automatic port allocation
+  # Starting bases for automatic port allocation
   start_openvscode_server_port = 8000
   start_ssh_port               = 2222
 
@@ -137,9 +137,7 @@ resource "aws_key_pair" "this" {
 resource "aws_ssm_parameter" "container_ssh_public_keys" {
   for_each = {
     for i, c in local.prepared_devcontainers : tostring(i) => c
-    if try(c.remote_access.ssh, null) != null &&
-    (try(c.remote_access.ssh.public_ssh_key.local_key_path, null) != null ||
-    try(c.remote_access.ssh.public_ssh_key.aws_key_pair_name, null) != null)
+    if try(c.remote_access.ssh, null) != null
   }
 
   name        = "/${var.name}/devcontainers/${each.value.id}/ssh-public-key"
@@ -161,17 +159,20 @@ data "aws_key_pair" "container_specific" {
 
 /* ---------- OpenVSCode Server Tokens ---------- */
 resource "random_password" "tokens" {
-  for_each = { for i, _ in var.devcontainers : tostring(i) => i }
+  for_each = { for i, c in local.prepared_devcontainers : tostring(i) => c }
 
   length  = 32
   special = false
 }
 
 resource "aws_ssm_parameter" "openvscode_tokens" {
-  for_each = { for i, _ in var.devcontainers : tostring(i) => i }
+  for_each = {
+    for i, c in local.prepared_devcontainers : tostring(i) => c
+    if try(c.remote_access.openvscode_server, null) != null
+  }
 
-  name        = "/${var.name}/devcontainers/${local.prepared_devcontainers[each.value].id}/openvscode-token"
-  description = "OpenVSCode Server token for devcontainer ${local.prepared_devcontainers[each.value].id}"
+  name        = "/${var.name}/devcontainers/${each.value.id}/openvscode-token"
+  description = "OpenVSCode Server token for devcontainer ${each.value.id}"
   type        = "SecureString"
   value       = random_password.tokens[each.key].result
 }
@@ -223,20 +224,21 @@ resource "aws_instance" "this" {
       # Make scripts executable
       "chmod +x ${local.tmp_dir}/scripts/generate-self-sing-cert.sh",
       "chmod +x ${local.tmp_dir}/scripts/devcontainer_up_with_web_ui.sh",
+      "chmod +x ${local.tmp_dir}/scripts/clone_repository.sh",
 
       # Create streams nginx directories
       "sudo mkdir -p /etc/nginx/streams",
-      
+
       # Copy nginx configuration files
       "sudo cp ${local.tmp_dir}/scripts/nginx.config /etc/nginx/nginx.conf",
       "sudo cp ${local.tmp_dir}/scripts/ws_params.conf /etc/nginx/conf.d/ws_params.conf",
-      
+
       # Generate SSL certificate for nginx
       "sudo PUBLIC_IP=${self.public_ip} ${local.tmp_dir}/scripts/generate-self-sing-cert.sh",
 
       # Run devcontainers script
       "python3 ${local.tmp_dir}/scripts/run_devcontainers.py --name-prefix=${var.name} --public-ip=${self.public_ip} --scripts-dir=${local.tmp_dir}/scripts --config=${local.tmp_dir}/devcontainers.json",
-      
+
       # Clean up
       "rm -rf ${local.tmp_dir}"
     ]

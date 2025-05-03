@@ -6,7 +6,9 @@ module "devcontainer" {
   source = "github.com/tropicaltux/terraform-devcontainers"
   devcontainers = [
     {
-      source = "https://github.com/microsoft/vscode-remote-try-python.git"
+      source = {
+        url = "https://github.com/microsoft/vscode-remote-try-python.git"
+      }
     }
   ]
   public_ssh_key = {

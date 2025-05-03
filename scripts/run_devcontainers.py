@@ -124,22 +124,27 @@ def main():
         # Process each devcontainer
         for devcontainer in devcontainers:
             devcontainer_id = devcontainer['id']
-            repo_url = devcontainer['source']
-            branch = devcontainer.get('branch', '')
-            devcontainer_path = devcontainer.get('devcontainer_path', '')
-            port = devcontainer.get('port', 8000)
             
-            logging.info(f"Processing devcontainer: {devcontainer_id} from {repo_url} on port {port}")
+            source = devcontainer['source']
+            repo_url = source['url']
             
-            # Get the token for this specific devcontainer
-            token = get_token_from_aws_ssm(name_prefix, devcontainer_id)
+            logging.info(f"Processing devcontainer: {devcontainer_id} from {repo_url}")
+
+            branch = source.get('branch', '')
+            devcontainer_path = source.get('devcontainer_path', '')
+            repo_ssh_key = source.get('ssh_key', {})
             
             # Set environment variables for the script
             env = os.environ.copy()
             env['DEVCONTAINER_ID'] = devcontainer_id
             env['REPO_URL'] = repo_url
-            env['OPENVSCODE_TOKEN'] = token
             env['PUBLIC_IP'] = public_ip
+
+            # Pass credentials for SSH repo access (if needed)
+            if repo_ssh_key:
+                env['SECRET_NAME'] = repo_ssh_key['ref']
+                env['SOURCE'] = repo_ssh_key['src']
+                logging.info(f"SSH authentication will be used for Git repository access for {devcontainer_id}")
             
             if branch:
                 env['BRANCH'] = branch
@@ -153,7 +158,8 @@ def main():
             openvscode_server_config = remote_access.get('openvscode_server', {})
             env['OPENVSCODE_SERVER_ENABLED'] = 'true' if openvscode_server_config else 'false'
             if openvscode_server_config:
-                env['OPENVSCODE_SERVER_PORT'] = str(openvscode_server_config.get('port', 8000))
+                env['OPENVSCODE_TOKEN'] = get_token_from_aws_ssm(name_prefix, devcontainer_id)
+                env['OPENVSCODE_SERVER_PORT'] = str(openvscode_server_config['port'])
 
             # Check if SSH is configured and pass SSH configuration
             ssh_config = remote_access.get('ssh', {})
@@ -166,7 +172,7 @@ def main():
                 
                 if container_ssh_key:
                     env['SSH_PUBLIC_KEY'] = container_ssh_key
-                    env['SSH_PORT'] = str(ssh_config.get('port'))
+                    env['SSH_PORT'] = str(ssh_config['port'])
                     logging.info(f"Using container-specific SSH key for {devcontainer_id} on port {env['SSH_PORT']}")
                 else:
                     raise Exception(f"No SSH key available for {devcontainer_id}.")

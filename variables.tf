@@ -3,10 +3,16 @@
 variable "devcontainers" {
   description = "Git repositories that contain devcontainer definitions."
   type = list(object({
-    id                = optional(string)
-    source            = string
-    branch            = optional(string)
-    devcontainer_path = optional(string)
+    id = optional(string)
+    source = object({
+      url               = string
+      branch            = optional(string)
+      devcontainer_path = optional(string)
+      ssh_key = optional(object({
+        ref = string
+        src = string # either 'secrets_manager' or 'ssm_parameter_store'
+      }))
+    })
     remote_access = optional(object({
       openvscode_server = optional(object({
         port = optional(number)
@@ -25,8 +31,31 @@ variable "devcontainers" {
 
   # Source must be set for every repo
   validation {
-    condition     = alltrue([for c in var.devcontainers : c.source != "" && c.source != null])
-    error_message = "The *source* attribute is mandatory for every devcontainer."
+    condition     = alltrue([for c in var.devcontainers : c.source.url != "" && c.source.url != null])
+    error_message = "The *source.url* attribute is mandatory for every devcontainer."
+  }
+
+  # SSH key validation for source URL
+  validation {
+    condition = alltrue([
+      for c in var.devcontainers : (
+        (strcontains(c.source.url, "ssh://") || strcontains(c.source.url, "git@"))
+        ? contains(keys(c.source), "ssh_key")
+        : !contains(keys(c.source), "ssh_key") || c.source.ssh_key == null
+      )
+    ])
+    error_message = "ssh_key must be provided for SSH URLs, and omitted for HTTPS URLs."
+  }
+
+  # Validate ssh_key src field
+  validation {
+    condition = alltrue([
+      for c in var.devcontainers : (
+        try(c.source.ssh_key, null) == null ? true :
+        contains(["secrets_manager", "ssm_parameter_store"], c.source.ssh_key.src)
+      )
+    ])
+    error_message = "The ssh_key.src value must be either 'secretsmanager' or 'ssm'."
   }
 
   # Number of devcontainers must be between 1 and 1000
