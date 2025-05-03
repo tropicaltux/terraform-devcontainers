@@ -11,7 +11,7 @@ locals {
 
   git_ssh_keys_secrets_arns = [
     for c in local.prepared_devcontainers :
-    "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${c.source.ssh_key.ref}"
+    "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${c.source.ssh_key.ref}-??????"
     if try(c.source.ssh_key.src, "") == "secrets_manager" && try(c.source.ssh_key.ref, "") != ""
   ]
 }
