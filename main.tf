@@ -9,8 +9,8 @@ locals {
   # Collect ports explicitly set by the user so we do not reuse them
   user_defined_ports = distinct(flatten([
     for dc in var.devcontainers : concat(
-      dc.remote_access != null && dc.remote_access.openvscode_server != null && dc.remote_access.openvscode_server.port != null ? [dc.remote_access.openvscode_server.port] : [],
-      dc.remote_access != null && dc.remote_access.ssh != null && dc.remote_access.ssh.port != null ? [dc.remote_access.ssh.port] : []
+      try(dc.remote_access.openvscode_server.port, null) != null ? [dc.remote_access.openvscode_server.port] : [],
+      try(dc.remote_access.ssh.port, null) != null ? [dc.remote_access.ssh.port] : []
     )
   ]))
 
@@ -94,7 +94,7 @@ resource "aws_security_group" "this" {
 
   # Add OpenVSCode server ports for each devcontainer
   dynamic "ingress" {
-    for_each = { for i, c in local.prepared_devcontainers : i => c if c.remote_access.openvscode_server != null }
+    for_each = { for i, c in local.prepared_devcontainers : i => c if try(c.remote_access.openvscode_server, null) != null }
     content {
       description = "OpenVSCode Server for ${ingress.value.id != null ? ingress.value.id : "container-${ingress.key}"}"
       from_port   = ingress.value.remote_access.openvscode_server.port
@@ -106,7 +106,7 @@ resource "aws_security_group" "this" {
 
   # Add SSH ports for each devcontainer
   dynamic "ingress" {
-    for_each = { for i, c in local.prepared_devcontainers : i => c if c.remote_access.ssh != null }
+    for_each = { for i, c in local.prepared_devcontainers : i => c if try(c.remote_access.ssh, null) != null }
     content {
       description = "SSH for ${ingress.value.id != null ? ingress.value.id : "container-${ingress.key}"}"
       from_port   = ingress.value.remote_access.ssh.port
@@ -137,7 +137,7 @@ resource "aws_key_pair" "this" {
 resource "aws_ssm_parameter" "container_ssh_public_keys" {
   for_each = {
     for i, c in local.prepared_devcontainers : tostring(i) => c
-    if c.remote_access.ssh != null &&
+    if try(c.remote_access.ssh, null) != null &&
     (try(c.remote_access.ssh.public_ssh_key.local_key_path, null) != null ||
     try(c.remote_access.ssh.public_ssh_key.aws_key_pair_name, null) != null)
   }
@@ -145,14 +145,14 @@ resource "aws_ssm_parameter" "container_ssh_public_keys" {
   name        = "/${var.name}/devcontainers/${each.value.id}/ssh-public-key"
   description = "SSH public key for devcontainer ${each.value.id}"
   type        = "SecureString"
-  value       = each.value.remote_access.ssh.public_ssh_key.local_key_path != null ? file(each.value.remote_access.ssh.public_ssh_key.local_key_path) : data.aws_key_pair.container_specific[each.key].public_key
+  value       = try(each.value.remote_access.ssh.public_ssh_key.local_key_path, null) != null ? file(each.value.remote_access.ssh.public_ssh_key.local_key_path) : data.aws_key_pair.container_specific[each.key].public_key
 }
 
 # Get container-specific AWS Key Pairs if aws_key_pair_name is specified
 data "aws_key_pair" "container_specific" {
   for_each = {
     for i, c in local.prepared_devcontainers : tostring(i) => c.remote_access.ssh.public_ssh_key.aws_key_pair_name
-    if c.remote_access.ssh != null &&
+    if try(c.remote_access.ssh, null) != null &&
     try(c.remote_access.ssh.public_ssh_key.aws_key_pair_name, null) != null
   }
 
