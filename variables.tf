@@ -1,5 +1,4 @@
 ############### devcontainer ##################################################
-
 variable "devcontainers" {
   description = "Git repositories that contain devcontainer definitions."
   type = list(object({
@@ -58,6 +57,14 @@ variable "devcontainers" {
     error_message = "The ssh_key.src value must be either 'secretsmanager' or 'ssm'."
   }
 
+  # You cannot configure a openvscode_server port if DNS is not provided
+  validation {
+    condition = alltrue([
+      for c in var.devcontainers : try(var.dns.high_level_domain, null) == null ? true : try(c.remote_access.openvscode_server.port, null) == null
+    ])
+    error_message = "OpenVSCode-server port cannot be configured if DNS is not provided."
+  }
+
   # Number of devcontainers must be between 1 and 1000
   validation {
     condition     = length(var.devcontainers) >= 1 && length(var.devcontainers) <= 512
@@ -104,6 +111,15 @@ variable "devcontainers" {
     ])
     error_message = "In every SSH block specify *either* local_key_path *or* aws_key_pair_name (not both)."
   }
+}
+
+############### dns ###########################################################
+variable "dns" {
+  description = "DNS configuration."
+  type = object({
+    high_level_domain = string
+  })
+  default = null
 }
 
 ############### name ##########################################################

@@ -2,8 +2,10 @@
 data "aws_region" "current" {}
 
 locals {
-  tmp_dir  = "/home/ec2-user/tmp/terraform-devcontainers"
-  dns_name = "ec2-${replace(aws_instance.this.public_ip, ".", "-")}.${data.aws_region.current.name}.compute.amazonaws.com"
+  create_dns_records = var.dns != null
+  subdomain_fqdn     = local.create_dns_records ? "${var.name}.${var.dns.high_level_domain}" : ""
+
+  tmp_dir = "/home/ec2-user/tmp/terraform-devcontainers"
 
   # Starting bases for automatic port allocation
   start_openvscode_server_port = 8000
@@ -18,7 +20,7 @@ locals {
   ]))
 
   # Pre-allocate conflict-free ports for every devcontainer index
-  openvscode_auto_ports = zipmap(
+  openvscode_auto_ports = local.create_dns_records ? {} : zipmap(
     [for idx in range(length(var.devcontainers)) : idx],
     slice([
       for p in range(local.start_openvscode_server_port, local.start_openvscode_server_port + 1024) :
@@ -38,7 +40,7 @@ locals {
   prepared_devcontainers = [
     for i, c in var.devcontainers : merge(c, {
       # Generate a unique ID for each devcontainer if not provided
-      id = c.id != null ? c.id : uuid(),
+      id = c.id != null ? c.id : "devcontainer-${i}",
 
       # Configure remote access for each devcontainer
       remote_access = merge(
@@ -50,7 +52,8 @@ locals {
             # If OpenVSCode server is explicitly configured
             try(c.remote_access.openvscode_server, null) != null ? merge(
               c.remote_access.openvscode_server,
-              { port = coalesce(c.remote_access.openvscode_server.port, local.openvscode_auto_ports[i]) }
+              # Only set port if DNS is not configured, otherwise leave it as is or null
+              local.create_dns_records ? {} : { port = coalesce(c.remote_access.openvscode_server.port, local.openvscode_auto_ports[i]) }
             ) :
             # Otherwise, don't configure OpenVSCode server
             null
@@ -73,7 +76,6 @@ locals {
       )
     })
   ]
-
 
   should_create_key_pair = var.public_ssh_key.local_key_path != null
   key_pair_name          = local.should_create_key_pair ? "${var.name}-key-pair" : var.public_ssh_key.aws_key_pair_name

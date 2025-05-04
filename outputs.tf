@@ -3,33 +3,37 @@ output "name" {
   value       = var.name
 }
 
-output "instance_id" {
-  description = "ID of the EC2 instance."
-  value       = aws_instance.this.id
+output "public_ip" {
+  description = "Public IP address of the EC2 instance."
+  value       = aws_instance.this.public_ip
 }
 
-output "dns_name" {
-  description = "Public DNS name of the EC2 instance."
-  value       = local.dns_name
+output "instance_id" {
+  description = "EC2 instance ID."
+  value       = aws_instance.this.id
 }
 
 output "devcontainers" {
   description = "List of configured devcontainers with their details."
   sensitive   = true
   value = [
-    for i, container in local.prepared_devcontainers : {
-      id     = container.id
-      source = container.source.url
+    for c in local.prepared_devcontainers : {
+      id     = c.id
+      source = c.source.url
       remote_access = merge(
         {},
-        container.remote_access.openvscode_server != null ? {
+        c.remote_access.openvscode_server != null ? {
           openvscode_server = {
-            url = "https://${aws_instance.this.public_ip}:${container.remote_access.openvscode_server.port}/?tkn=${random_password.tokens[tostring(i)].result}"
+            url = (local.create_dns_records
+              ? "https://${c.id}.${local.subdomain_fqdn}/?tkn=${random_password.tokens[c.id].result}"
+            : "https://${aws_instance.this.public_ip}:${c.remote_access.openvscode_server.port}/?tkn=${random_password.tokens[c.id].result}")
           }
         } : {},
-        container.remote_access.ssh != null ? {
+        c.remote_access.ssh != null ? {
           ssh = {
-            command = "ssh -p ${container.remote_access.ssh.port} root@${aws_instance.this.public_ip}"
+            command = (local.create_dns_records
+              ? "ssh -p ${c.remote_access.ssh.port} root@${c.id}.${var.dns.high_level_domain}"
+            : "ssh -p ${c.remote_access.ssh.port} root@${aws_instance.this.public_ip}")
           }
         } : {}
       )

@@ -1,7 +1,7 @@
 # Put individual SSH keys for devcontainers that specify their own keys into SSM Parameter Store
 resource "aws_ssm_parameter" "container_ssh_public_keys" {
   for_each = {
-    for i, c in local.prepared_devcontainers : tostring(i) => c
+    for c in local.prepared_devcontainers : c.id => c
     if try(c.remote_access.ssh, null) != null
   }
 
@@ -14,7 +14,7 @@ resource "aws_ssm_parameter" "container_ssh_public_keys" {
 # Put generated random tokens for each devcontainer into SSM Parameter Store
 resource "aws_ssm_parameter" "openvscode_tokens" {
   for_each = {
-    for i, c in local.prepared_devcontainers : tostring(i) => c
+    for c in local.prepared_devcontainers : c.id => c
     if try(c.remote_access.openvscode_server, null) != null
   }
 
@@ -26,7 +26,7 @@ resource "aws_ssm_parameter" "openvscode_tokens" {
 
 # Generate random tokens for each devcontainer
 resource "random_password" "tokens" {
-  for_each = { for i, c in local.prepared_devcontainers : tostring(i) => c }
+  for_each = { for c in local.prepared_devcontainers : c.id => c }
 
   length  = 32
   special = false

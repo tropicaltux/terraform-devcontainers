@@ -8,7 +8,7 @@ resource "aws_key_pair" "this" {
 # Get container-specific AWS Key Pairs if aws_key_pair_name is specified
 data "aws_key_pair" "container_specific" {
   for_each = {
-    for i, c in local.prepared_devcontainers : tostring(i) => c.remote_access.ssh.public_ssh_key.aws_key_pair_name
+    for c in local.prepared_devcontainers : c.id => c.remote_access.ssh.public_ssh_key.aws_key_pair_name
     if try(c.remote_access.ssh, null) != null &&
     try(c.remote_access.ssh.public_ssh_key.aws_key_pair_name, null) != null
   }

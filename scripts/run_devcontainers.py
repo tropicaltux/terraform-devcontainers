@@ -88,6 +88,7 @@ def main():
     parser.add_argument('--public-ip', required=True, help='EC2 instance public IPv4 address.')
     parser.add_argument('--scripts-dir', required=True, help='Path to the scripts directory')
     parser.add_argument('--config', required=True, help='Path to the devcontainers configuration file')
+    parser.add_argument('--high-level-domain', help='High-level domain to use for subdomain configuration')
 
     args = parser.parse_args()
     
@@ -95,6 +96,7 @@ def main():
     public_ip = args.public_ip
     scripts_dir = args.scripts_dir
     devcontainers_config = args.config
+    high_level_domain = args.high_level_domain
     
     # Set SCRIPTS environment variable for child processes
     os.environ['SCRIPTS'] = scripts_dir
@@ -159,7 +161,17 @@ def main():
             env['OPENVSCODE_SERVER_ENABLED'] = 'true' if openvscode_server_config else 'false'
             if openvscode_server_config:
                 env['OPENVSCODE_TOKEN'] = get_token_from_aws_ssm(name_prefix, devcontainer_id)
-                env['OPENVSCODE_SERVER_PORT'] = str(openvscode_server_config['port'])
+                # Only set port if it's present in the config
+                if 'port' in openvscode_server_config:
+                    env['OPENVSCODE_SERVER_PORT'] = str(openvscode_server_config['port'])
+                else:
+                    logging.info(f"No port specified for OpenVSCode Server for {devcontainer_id}, DNS is likely configured")
+                
+                # Set domain if high-level domain is provided
+                if high_level_domain:
+                    # Generate subdomain hostname by concatenating devcontainer ID with high-level domain
+                    env['SUBDOMAIN_HOSTNAME'] = f"{devcontainer_id}.{high_level_domain}"
+                    logging.info(f"Using domain {env['SUBDOMAIN_HOSTNAME']} for OpenVSCode Server")
 
             # Check if SSH is configured and pass SSH configuration
             ssh_config = remote_access.get('ssh', {})

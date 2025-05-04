@@ -21,8 +21,8 @@ if [ ${#missing_vars[@]} -ne 0 ]; then
 fi
 
 if [ "${OPENVSCODE_SERVER_ENABLED}" = "true" ]; then
-  if [ -z "${OPENVSCODE_SERVER_PORT}" ]; then
-    echo "ERROR: OpenVSCode Server is enabled but OPENVSCODE_SERVER_PORT is not set."
+  if [ -z "${SUBDOMAIN_HOSTNAME}" ] && [ -z "${OPENVSCODE_SERVER_PORT}" ]; then
+    echo "ERROR: OpenVSCode Server is enabled but neither SUBDOMAIN_HOSTNAME nor OPENVSCODE_SERVER_PORT is set."
     exit 1
   fi
   
@@ -109,19 +109,42 @@ if [ "${OPENVSCODE_SERVER_ENABLED}" = "true" ]; then
   # Execute the OpenVSCode server initialization script
   docker exec --user $CONTAINER_USER -e OPENVSCODE_TOKEN="$OPENVSCODE_TOKEN" $CONTAINER_ID /tmp/init-scripts/init-openvscode-server.sh
   
-  # Configure nginx for OpenVSCode server
-  sudo bash -c "
-    env \
-      OPENVSCODE_SERVER_IP=$CONTAINER_IP \
-      OPENVSCODE_SERVER_PUBLIC_PORT=$OPENVSCODE_SERVER_PORT \
-      WORKSPACE_PATH=$CONTAINER_WORKSPACE_PATH \
-      PUBLIC_IP=$PUBLIC_IP \
-    envsubst '\$OPENVSCODE_SERVER_IP \$OPENVSCODE_SERVER_PUBLIC_PORT \$WORKSPACE_PATH' \
-      < $SCRIPTS/openvscode-server.template.conf \
-      > /etc/nginx/conf.d/$DEVCONTAINER_ID.conf
-  "
-  
-  echo "OpenVSCode Server for $DEVCONTAINER_ID URL: https://$CONTAINER_IP:$OPENVSCODE_SERVER_PORT"
+  # Configure nginx for OpenVSCode server based on whether we have a subdomain or not
+  if [ -n "${SUBDOMAIN_HOSTNAME}" ]; then
+    # DNS-based configuration
+    sudo bash -c "
+      env \
+        OPENVSCODE_SERVER_IP=$CONTAINER_IP \
+        SUBDOMAIN_HOSTNAME=$SUBDOMAIN_HOSTNAME \
+        WORKSPACE_PATH=$CONTAINER_WORKSPACE_PATH \
+      envsubst '\$OPENVSCODE_SERVER_IP \$SUBDOMAIN_HOSTNAME \$WORKSPACE_PATH' \
+        < $SCRIPTS/openvscode-server.dns.template.conf \
+        > /etc/nginx/conf.d/$DEVCONTAINER_ID.conf
+    "
+
+    echo "OpenVSCode Server for $DEVCONTAINER_ID URL: https://$PUBLIC_IP:$OPENVSCODE_SERVER_PORT"
+
+    # Wait for DNS propagation
+    ${SCRIPTS}/dns-propagation-check.sh $(echo $SUBDOMAIN_HOSTNAME | cut -d'.' -f2-)
+    
+    # Run certbot to obtain SSL certificate for the subdomain
+    echo "Running certbot to obtain SSL certificate for $SUBDOMAIN_HOSTNAME..."
+    sudo certbot --nginx -d $SUBDOMAIN_HOSTNAME --non-interactive --redirect --agree-tos --register-unsafely-without-email
+  else
+    # IP-based configuration
+    sudo bash -c "
+      env \
+        OPENVSCODE_SERVER_IP=$CONTAINER_IP \
+        OPENVSCODE_SERVER_PUBLIC_PORT=$OPENVSCODE_SERVER_PORT \
+        WORKSPACE_PATH=$CONTAINER_WORKSPACE_PATH \
+        PUBLIC_IP=$PUBLIC_IP \
+      envsubst '\$OPENVSCODE_SERVER_IP \$OPENVSCODE_SERVER_PUBLIC_PORT \$WORKSPACE_PATH' \
+        < $SCRIPTS/openvscode-server.ip.template.conf \
+        > /etc/nginx/conf.d/$DEVCONTAINER_ID.conf
+    "
+    
+    echo "OpenVSCode Server for $DEVCONTAINER_ID URL: https://$PUBLIC_IP:$OPENVSCODE_SERVER_PORT"
+  fi
 else
   echo "OpenVSCode Server is disabled, skipping installation."
 fi

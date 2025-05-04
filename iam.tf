@@ -47,8 +47,8 @@ resource "aws_iam_role_policy" "openvscode_tokens_policy" {
         Action = ["ssm:GetParameter"]
         Effect = "Allow"
         Resource = [
-          for i, _ in local.prepared_devcontainers :
-          aws_ssm_parameter.openvscode_tokens[tostring(i)].arn
+          for c in local.prepared_devcontainers :
+          aws_ssm_parameter.openvscode_tokens[c.id].arn
         ]
       }
     ]
@@ -104,7 +104,7 @@ resource "aws_iam_role_policy" "git_ssh_keys_policy" {
 }
 
 # Instance profile to attach the role to the EC2 instance
-resource "aws_iam_instance_profile" "openvscode_secrets" {
-  name = "${var.name}-openvscode-profile"
+resource "aws_iam_instance_profile" "devcontainers_instance_profile" {
+  name = "${var.name}-devcontainers-instance-profile"
   role = aws_iam_role.openvscode_role.name
 } 
