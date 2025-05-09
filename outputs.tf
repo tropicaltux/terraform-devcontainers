@@ -32,7 +32,7 @@ output "devcontainers" {
         c.remote_access.ssh != null ? {
           ssh = {
             command = (local.create_dns_records
-              ? "ssh -p ${c.remote_access.ssh.port} root@${c.id}.${var.dns.high_level_domain}"
+              ? "ssh -p ${c.remote_access.ssh.port} root@${var.name}.${var.dns.high_level_domain}"
             : "ssh -p ${c.remote_access.ssh.port} root@${aws_instance.this.public_ip}")
           }
         } : {}
