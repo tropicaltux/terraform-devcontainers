@@ -40,7 +40,7 @@ locals {
   prepared_devcontainers = [
     for i, c in var.devcontainers : merge(c, {
       # Generate a unique ID for each devcontainer if not provided
-      id = c.id != null ? c.id : "devcontainer-${i}",
+      id = coalesce(c.id, "devcontainer-${i}"),
 
       # Configure remote access for each devcontainer
       remote_access = merge(
