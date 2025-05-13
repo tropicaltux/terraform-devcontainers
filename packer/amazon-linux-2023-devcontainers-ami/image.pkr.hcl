@@ -1,7 +1,7 @@
 packer {
   required_plugins {
     amazon = {
-      version = ">= 1.2.8"
+      version = ">= 1.3.6"
       source  = "github.com/hashicorp/amazon"
     }
   }
@@ -12,6 +12,11 @@ variable "region" {
   default = "eu-central-1"
 }
 
+variable "instance_type" {
+  type    = string
+  default = "t2.micro"
+}
+
 variable "architecture" {
   type    = string
   default = "x86_64"
@@ -19,7 +24,7 @@ variable "architecture" {
 
 source "amazon-ebs" "amazon_linux_2023" {
   region                      = var.region
-  instance_type               = "t2.micro"
+  instance_type               = var.instance_type
   ami_name                    = "amazon-linux-2023-devcontainers-${var.architecture}-{{timestamp}}"
   ssh_username                = "ec2-user"
   associate_public_ip_address = true
@@ -36,7 +41,7 @@ source "amazon-ebs" "amazon_linux_2023" {
 
   tags = {
     "Name" = "Amazon Linux 2023 Dev Containers (${var.architecture})"
-    # "Project"     = "Project-X"
+    "Project"     = "Terraform Development Containers"
     "Owner"       = "tropicaltux@proton.me"
     "CreatedBy"   = "Packer"
     "Application" = "Dev Container"
@@ -60,7 +65,7 @@ build {
 
       # Install Docker Compose Plugin
       "export CLI_PLUGINS_PATH=/usr/local/lib/docker/cli-plugins",
-      "export DOCKER_COMPOSE_URL=https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$(uname -m)",
+      "export DOCKER_COMPOSE_URL=https://github.com/docker/compose/releases/download/v2.36.0/docker-compose-linux-$(uname -m)",
       "sudo mkdir -p $CLI_PLUGINS_PATH",
       "sudo curl -SL $DOCKER_COMPOSE_URL -o $CLI_PLUGINS_PATH/docker-compose",
       "sudo chmod +x $CLI_PLUGINS_PATH/docker-compose",
