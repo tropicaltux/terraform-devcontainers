@@ -29,5 +29,4 @@ module "devcontainers" {
 
 output "devcontainers_module_output" {
   value = module.devcontainers
-  sensitive = true
 }

@@ -48,10 +48,8 @@ module "multiple_devcontainers" {
 
 output "single_devcontainer_module_output" {
   value = module.single_devcontainer
-  sensitive = true
 }
 
 output "multiple_devcontainers_module_output" {
   value = module.multiple_devcontainers
-  sensitive = true
 }

@@ -21,11 +21,12 @@ resource "aws_ssm_parameter" "openvscode_tokens" {
   name        = "/${var.name}/devcontainers/${each.value.id}/openvscode-token"
   description = "OpenVSCode Server token for devcontainer ${each.value.id}"
   type        = "SecureString"
-  value       = random_password.tokens[each.key].result
+  value_wo    = ephemeral.random_password.tokens[each.key].result
+  value_wo_version = 1
 }
 
 # Generate random tokens for each devcontainer
-resource "random_password" "tokens" {
+ephemeral "random_password" "tokens" {
   for_each = { for c in local.prepared_devcontainers : c.id => c }
 
   length  = 32

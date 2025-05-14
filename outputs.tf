@@ -15,7 +15,6 @@ output "instance_id" {
 
 output "devcontainers" {
   description = "List of configured devcontainers with their details."
-  sensitive   = true
   value = [
     for c in local.prepared_devcontainers : {
       id     = c.id
@@ -25,8 +24,9 @@ output "devcontainers" {
         c.remote_access.openvscode_server != null ? {
           openvscode_server = {
             url = (local.create_dns_records
-              ? "https://${c.id}.${local.subdomain_fqdn}/?tkn=${random_password.tokens[c.id].result}"
-            : "https://${aws_instance.devcontainers_instance.public_ip}:${c.remote_access.openvscode_server.port}/?tkn=${random_password.tokens[c.id].result}")
+              ? "https://${c.id}.${local.subdomain_fqdn}/?tkn={token}"
+            : "https://${aws_instance.devcontainers_instance.public_ip}:${c.remote_access.openvscode_server.port}/?tkn={token}"),
+            token_ssm_parameter = aws_ssm_parameter.openvscode_tokens[c.id].name
           }
         } : {},
         c.remote_access.ssh != null ? {
