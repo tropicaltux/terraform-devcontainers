@@ -81,7 +81,7 @@ resource "null_resource" "run_devcontainers" {
     destination = local.tmp_dir
   }
 
-  # 3. Upload devcontainers configuration with ports
+  # 3. Upload devcontainers configuration
   provisioner "file" {
     content     = jsonencode(local.prepared_devcontainers)
     destination = "${local.tmp_dir}/devcontainers.json"
@@ -90,30 +90,8 @@ resource "null_resource" "run_devcontainers" {
   # 4. Configure nginx and run the Python script to process devcontainers
   provisioner "remote-exec" {
     inline = [
-      # Make scripts executable
-      "chmod +x ${local.tmp_dir}/scripts/generate-self-sing-cert.sh",
-      "chmod +x ${local.tmp_dir}/scripts/devcontainer_up_with_web_ui.sh",
-      "chmod +x ${local.tmp_dir}/scripts/clone_repository.sh",
-      "chmod +x ${local.tmp_dir}/scripts/dns-propagation-check.sh",
-
-      # Create streams nginx directories
-      "sudo mkdir -p /etc/nginx/streams",
-
-      # Create letsencrypt directory
-      "sudo mkdir -p /var/www/letsencrypt",
-
-      # Copy nginx configuration files
-      "sudo cp ${local.tmp_dir}/scripts/nginx.config /etc/nginx/nginx.conf",
-      "sudo cp ${local.tmp_dir}/scripts/ws_params.conf /etc/nginx/conf.d/ws_params.conf",
-
-      # Generate self-signed SSL certificate for nginx only if not using DNS
-      "if [ \"${local.create_dns_records}\" != \"true\" ]; then sudo PUBLIC_IP=${aws_instance.this.public_ip} ${local.tmp_dir}/scripts/generate-self-sing-cert.sh; fi",
-
-      # Run devcontainers script
-      "python3 ${local.tmp_dir}/scripts/run_devcontainers.py --name-prefix=${var.name} --public-ip=${aws_instance.this.public_ip} --scripts-dir=${local.tmp_dir}/scripts --config=${local.tmp_dir}/devcontainers.json${local.create_dns_records ? " --high-level-domain=${local.subdomain_fqdn}" : ""}",
-
-      # Clean up
-      "rm -rf ${local.tmp_dir}"
+      "chmod +x ${local.tmp_dir}/scripts/configure_and_run_devcontainers.sh",
+      "${local.tmp_dir}/scripts/configure_and_run_devcontainers.sh ${local.tmp_dir} ${var.name} ${aws_instance.this.public_ip} ${local.subdomain_fqdn}"
     ]
   }
 }
