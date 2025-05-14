@@ -44,7 +44,7 @@ source "amazon-ebs" "amazon_linux_2023" {
     "Project"     = "Terraform Development Containers"
     "Owner"       = "tropicaltux@proton.me"
     "CreatedBy"   = "Packer"
-    "Application" = "Dev Container"
+    "Application" = "Development Container"
     "Version"     = "0.1.0"
   }
 }

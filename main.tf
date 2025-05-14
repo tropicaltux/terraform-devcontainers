@@ -1,3 +1,18 @@
+data "aws_ami" "devcontainers" {
+  most_recent = true
+  owners      = ["self"]
+
+  filter {
+    name   = "name"
+    values = ["amazon-linux-2023-devcontainers-*"]
+  }
+
+  filter {
+    name   = "state"
+    values = ["available"]
+  }
+}
+
 resource "terraform_data" "instance_dependent_data" {
   input = {
     devcontainers = var.devcontainers
@@ -6,7 +21,7 @@ resource "terraform_data" "instance_dependent_data" {
 }
 
 resource "aws_instance" "this" {
-  ami                         = "ami-015fc6180c36c472c"
+  ami                         = data.aws_ami.devcontainers.id
   instance_type               = var.instance_type
   key_name                    = local.key_pair_name
   vpc_security_group_ids      = [aws_security_group.this.id]

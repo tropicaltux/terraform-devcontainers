@@ -135,6 +135,18 @@ variable "instance_type" {
   type        = string
 }
 
+############### architecture ##################################################
+variable "architecture" {
+  description = "EC2 instance architecture."
+  type        = string
+  default     = "x86_64"
+  
+  validation {
+    condition     = contains(["x86_64", "arm64"], var.architecture)
+    error_message = "Architecture must be either 'x86_64' or 'arm64'."
+  }
+}
+
 ############### public_ssh_key #################################################
 variable "public_ssh_key" {
   description = "Provide either the path to a local public SSH key or the name of an existing AWS key pair. Only one option should be set."
