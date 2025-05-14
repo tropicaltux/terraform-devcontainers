@@ -34,6 +34,17 @@ variable "devcontainers" {
     error_message = "The *source.url* attribute is mandatory for every devcontainer."
   }
 
+  # Validate that IDs (if specified) are valid domain name components
+  validation {
+    condition = alltrue([
+      for c in var.devcontainers : (
+        c.id == null ? true : 
+        can(regex("^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$", lower(c.id)))
+      )
+    ])
+    error_message = "The devcontainer ID must be a valid domain name component: start and end with alphanumeric characters, contain only alphanumeric characters and hyphens, and be no longer than 63 characters."
+  }
+
   # SSH key validation for source URL
   validation {
     condition = alltrue([
@@ -127,6 +138,11 @@ variable "name" {
   description = "Name prefix for the resources."
   type        = string
   default     = "devcontainers"
+
+  validation {
+    condition     = can(regex("^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$", lower(var.name)))
+    error_message = "The name variable must be a valid domain name component: start and end with alphanumeric characters, contain only alphanumeric characters and hyphens, and be no longer than 63 characters."
+  }
 }
 
 ############### instance_type #################################################
