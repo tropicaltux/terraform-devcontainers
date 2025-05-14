@@ -11,6 +11,11 @@ data "aws_ami" "devcontainers" {
     name   = "state"
     values = ["available"]
   }
+
+  filter {
+    name   = "architecture"
+    values = [var.architecture]
+  }
 }
 
 resource "terraform_data" "instance_dependent_data" {

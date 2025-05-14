@@ -4,7 +4,11 @@ cd "$(dirname $0)"
 
 if [ ! -e "$HOME/.openvscodeserver/bin" ]; then
     echo "Downloading openvscode-server..."
-    export ARCHITECTURE=$([ "$(uname -m)" = "x86_64" ] && echo "x64" || [ "$(uname -m)" = "aarch64" ] && echo "arm64" || uname -m)
+    case "$(uname -m)" in
+        x86_64) export ARCHITECTURE="x64" ;;
+        aarch64) export ARCHITECTURE="arm64" ;;
+        *) echo "Unsupported architecture: $(uname -m)" && exit 1 ;;
+    esac
     curl -fsSL "https://github.com/gitpod-io/openvscode-server/releases/download/openvscode-server-v1.99.3/openvscode-server-v1.99.3-linux-${ARCHITECTURE}.tar.gz" -o /tmp/openvscode-server.tar.gz
     mkdir -p "$HOME/.openvscodeserver"
     echo "Extracting..."
