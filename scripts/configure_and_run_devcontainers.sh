@@ -22,8 +22,8 @@ sudo mkdir -p /etc/nginx/streams
 sudo mkdir -p /var/www/letsencrypt
 
 # Copy nginx configuration files
-sudo cp ${TMP_DIR}/scripts/nginx.config /etc/nginx/nginx.conf
-sudo cp ${TMP_DIR}/scripts/ws_params.conf /etc/nginx/conf.d/ws_params.conf
+sudo cp ${TMP_DIR}/scripts/nginx/nginx.config /etc/nginx/nginx.conf
+sudo cp ${TMP_DIR}/scripts/nginx/ws_params.conf /etc/nginx/conf.d/ws_params.conf
 
 # Generate self-signed SSL certificate for nginx only if not using DNS
 if [ -z "${SUBDOMAIN_FQDN}" ]; then 

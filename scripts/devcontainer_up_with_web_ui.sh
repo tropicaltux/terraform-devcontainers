@@ -118,7 +118,7 @@ if [ "${OPENVSCODE_SERVER_ENABLED}" = "true" ]; then
         SUBDOMAIN_HOSTNAME=$SUBDOMAIN_HOSTNAME \
         WORKSPACE_PATH=$CONTAINER_WORKSPACE_PATH \
       envsubst '\$OPENVSCODE_SERVER_IP \$SUBDOMAIN_HOSTNAME \$WORKSPACE_PATH' \
-        < $SCRIPTS/openvscode-server.dns.template.conf \
+        < $SCRIPTS/nginx/openvscode-server.dns.template.conf \
         > /etc/nginx/conf.d/$DEVCONTAINER_ID.conf
     "
 
@@ -139,7 +139,7 @@ if [ "${OPENVSCODE_SERVER_ENABLED}" = "true" ]; then
         WORKSPACE_PATH=$CONTAINER_WORKSPACE_PATH \
         PUBLIC_IP=$PUBLIC_IP \
       envsubst '\$OPENVSCODE_SERVER_IP \$OPENVSCODE_SERVER_PUBLIC_PORT \$WORKSPACE_PATH' \
-        < $SCRIPTS/openvscode-server.ip.template.conf \
+        < $SCRIPTS/nginx/openvscode-server.ip.template.conf \
         > /etc/nginx/conf.d/$DEVCONTAINER_ID.conf
     "
     
@@ -163,7 +163,7 @@ if [ "${SSH_ENABLED}" = "true" ]; then
       SSH_PUBLIC_PORT=$SSH_PORT \
       CONTAINER_SSH_PORT=2222 \
     envsubst '\$SSH_CONTAINER_IP \$SSH_PUBLIC_PORT \$CONTAINER_SSH_PORT' \
-      < $SCRIPTS/ssh-stream.template.conf \
+      < $SCRIPTS/nginx/ssh-stream.template.conf \
       > /etc/nginx/streams/$DEVCONTAINER_ID.conf
   "
   
