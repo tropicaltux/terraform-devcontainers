@@ -25,11 +25,11 @@ resource "terraform_data" "instance_dependent_data" {
   }
 }
 
-resource "aws_instance" "this" {
+resource "aws_instance" "devcontainers_instance" {
   ami                         = data.aws_ami.devcontainers.id
   instance_type               = var.instance_type
   key_name                    = local.key_pair_name
-  vpc_security_group_ids      = [aws_security_group.this.id]
+  vpc_security_group_ids      = [aws_security_group.instance_security_group.id]
   associate_public_ip_address = true
 
   tags = {
@@ -49,14 +49,14 @@ resource "aws_instance" "this" {
 
 resource "null_resource" "run_devcontainers" {
   depends_on = [
-    aws_instance.this, aws_route53_zone.subdomain, aws_route53_record.subdomain_a,
+    aws_instance.devcontainers_instance, aws_route53_zone.subdomain, aws_route53_record.subdomain_a,
     aws_route53_record.wildcard, aws_route53_record.subdomain_delegation
   ]
 
   lifecycle {
     create_before_destroy = true
     replace_triggered_by = [
-      aws_instance.this
+      aws_instance.devcontainers_instance
     ]
   }
 
@@ -64,7 +64,7 @@ resource "null_resource" "run_devcontainers" {
   connection {
     type  = "ssh"
     user  = "ec2-user"
-    host  = aws_instance.this.public_ip
+    host  = aws_instance.devcontainers_instance.public_ip
     agent = true
   }
 
@@ -91,7 +91,7 @@ resource "null_resource" "run_devcontainers" {
   provisioner "remote-exec" {
     inline = [
       "chmod +x ${local.tmp_dir}/scripts/configure_and_run_devcontainers.sh",
-      "${local.tmp_dir}/scripts/configure_and_run_devcontainers.sh ${local.tmp_dir} ${var.name} ${aws_instance.this.public_ip} ${local.subdomain_fqdn}"
+      "${local.tmp_dir}/scripts/configure_and_run_devcontainers.sh ${local.tmp_dir} ${var.name} ${aws_instance.devcontainers_instance.public_ip} ${local.subdomain_fqdn}"
     ]
   }
 }

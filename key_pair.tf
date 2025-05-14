@@ -1,4 +1,4 @@
-resource "aws_key_pair" "this" {
+resource "aws_key_pair" "instance_key_pair" {
   count = local.should_create_key_pair ? 1 : 0
 
   key_name   = local.key_pair_name

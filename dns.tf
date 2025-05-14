@@ -36,7 +36,7 @@ resource "aws_route53_record" "subdomain_a" {
   name    = "" # apex/root of the subdomain zone
   type    = "A"
   ttl     = 300
-  records = [aws_instance.this.public_ip]
+  records = [aws_instance.devcontainers_instance.public_ip]
 }
 
 # Create a wildcard record in the subdomain zone
@@ -47,5 +47,5 @@ resource "aws_route53_record" "wildcard" {
   name    = "*" # wildcard for the subdomain zone
   type    = "A"
   ttl     = 300
-  records = [aws_instance.this.public_ip]
+  records = [aws_instance.devcontainers_instance.public_ip]
 }

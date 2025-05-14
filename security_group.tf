@@ -1,4 +1,4 @@
-resource "aws_security_group" "this" {
+resource "aws_security_group" "instance_security_group" {
   name        = "${var.name}-security-group"
   description = "Ingress for SSH and VS Code server"
 
