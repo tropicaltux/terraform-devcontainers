@@ -6,7 +6,7 @@ resource "terraform_data" "instance_dependent_data" {
 }
 
 resource "aws_instance" "this" {
-  ami                         = "ami-015fc6180c36c472c"
+  ami                         = "ami-0a469bc5b6f561514"
   instance_type               = var.instance_type
   key_name                    = local.key_pair_name
   vpc_security_group_ids      = [aws_security_group.this.id]
